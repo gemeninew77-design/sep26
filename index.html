@@ -285,42 +285,6 @@
       font-size: inherit;
     }
 
-    /* نافذة التنزيل والتأكيد عند الحاجة */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.55);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 16px;
-    }
-
-    .modal-box {
-      background: #FFFFFF;
-      border-radius: 14px;
-      padding: 22px;
-      max-width: 420px;
-      width: 100%;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .modal-box h3 {
-      color: var(--primary);
-      font-size: 1.15rem;
-    }
-
-    .modal-box p {
-      font-size: 0.88rem;
-      color: var(--text);
-      line-height: 1.55;
-    }
-
     input[type="file"] {
       display: none;
     }
@@ -404,16 +368,6 @@
     </main>
   </div>
 
-  <!-- نافذة التنزيل الآمن -->
-  <div class="modal-backdrop" id="securityModal">
-    <div class="modal-box">
-      <h3>حفظ الصورة وتخطي حماية المتصفح</h3>
-      <p>عند فتح الصفحة كملف محلي (file://)، تمنع حماية المتصفح تصدير الصورة إلا بعد تأكيد اختيار ملف القالب مرة واحدة لحفظه محلياً.</p>
-      <button class="btn btn-primary" onclick="triggerTemplateSelectForExport()">اختيار ملف القالب وتنزيل الصورة</button>
-      <button class="btn btn-small" style="background:#f0f0f0; color:#555;" onclick="closeSecurityModal()">إلغاء</button>
-    </div>
-  </div>
-
   <script>
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
@@ -427,10 +381,8 @@
     const zoomSlider = document.getElementById('zoomSlider');
     const rotateSlider = document.getElementById('rotateSlider');
     const templateStatusText = document.getElementById('templateStatusText');
-    const securityModal = document.getElementById('securityModal');
 
-    // أبعاد وموضع فتحة الصورة الدائرية الانسيابية في القالب الجديد 1000701490.png
-    // المركز: X=480, Y=360, القطر التقريبي 410
+    // أبعاد وموضع فتحة الصورة في القالب
     const targetOpening = {
       centerX: 480,
       centerY: 360,
@@ -439,9 +391,7 @@
     };
 
     let userPhoto = null;
-    let templateCanvas = null;
     let templateImage = null;
-    let isTemplateClean = false;
 
     let photoTransform = {
       x: targetOpening.centerX,
@@ -450,18 +400,7 @@
       rotation: 0
     };
 
-    // التحقق من وجود قالب مخزن مسبقاً
-    const cachedTemplate = localStorage.getItem('sep26_v3_template');
-    if (cachedTemplate) {
-      const img = new Image();
-      img.onload = () => {
-        setupProcessedTemplate(img, true);
-        templateStatusText.textContent = 'تم تحميل القالب المحفوظ';
-      };
-      img.src = cachedTemplate;
-    }
-
-    // أسماء ملفات القالب المدعومة للاستدعاء التلقائي (بالبدء باسم القالب الجديد 1000701490)
+    // بدائل أسماء ملفات القالب المدعومة للاستدعاء التلقائي
     const templateCandidateNames = [
       '1000701490.png',
       '1000701490.jpg',
@@ -482,7 +421,6 @@
     let logoCandidateIndex = 0;
 
     function tryNextTemplate(imgElement) {
-      if (isTemplateClean) return;
       templateCandidateIndex++;
       if (templateCandidateIndex < templateCandidateNames.length) {
         imgElement.src = templateCandidateNames[templateCandidateIndex];
@@ -506,75 +444,32 @@
       }
     }
 
-    // تفريغ المنطقة الداكنة الخاصة بفتحة القالب الجديد تلقائياً
-    function setupProcessedTemplate(img, fromCleanSource = false) {
-      const tc = document.createElement('canvas');
-      tc.width = 1080;
-      tc.height = 1080;
-      const tCtx = tc.getContext('2d');
-      tCtx.drawImage(img, 0, 0, 1080, 1080);
-
-      try {
-        const imgData = tCtx.getImageData(0, 0, 1080, 1080);
-        const data = imgData.data;
-
-        // مسح المنطقة الداكنة في المنتصف المخصصة للصورة (من Y:140 إلى 580، ومن X:230 إلى 740)
-        for (let y = 140; y < 580; y++) {
-          for (let x = 230; x < 740; x++) {
-            const idx = (y * 1080 + x) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            if (r < 32 && g < 32 && b < 32) {
-              data[idx + 3] = 0; // تحويلها لشفافة لإظهار الصورة الشخصية خلفها
-            }
-          }
-        }
-        tCtx.putImageData(imgData, 0, 0);
-        templateCanvas = tc;
-      } catch (err) {
-        templateCanvas = tc;
-      }
-
+    // تعيين القالب مباشرة كما هو دون التعديل على بكسلاته الأصلية
+    function setTemplate(img) {
       templateImage = img;
-      if (fromCleanSource) isTemplateClean = true;
+      templateStatusText.textContent = 'تم استيراد القالب بنجاح';
       render();
     }
 
     const domTemplate = document.getElementById('domTemplate');
     domTemplate.onload = () => {
-      if (!isTemplateClean) {
-        setupProcessedTemplate(domTemplate, false);
-        templateStatusText.textContent = 'تم استيراد القالب الجديد تلقائياً';
-      }
+      setTemplate(domTemplate);
     };
-    if (domTemplate.complete && domTemplate.naturalWidth > 0 && !isTemplateClean) {
-      setupProcessedTemplate(domTemplate, false);
-      templateStatusText.textContent = 'تم استيراد القالب الجديد تلقائياً';
+    if (domTemplate.complete && domTemplate.naturalWidth > 0) {
+      setTemplate(domTemplate);
     }
 
-    // استيراد القالب وتخزينه كـ Data URL نظيف لضمان التنزيل المباشر
+    // استيراد القالب يدوياً عند رغبة المستخدم
     templateFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const dataUrl = evt.target.result;
-        try {
-          localStorage.setItem('sep26_v3_template', dataUrl);
-        } catch (e) {}
-
         const img = new Image();
         img.onload = () => {
-          setupProcessedTemplate(img, true);
-          templateStatusText.textContent = 'القالب جاهز والتنزيل مباشر';
-          closeSecurityModal();
-          if (userPhoto && pendingDownload) {
-            pendingDownload = false;
-            executeDirectDownload();
-          }
+          setTemplate(img);
         };
-        img.src = dataUrl;
+        img.src = evt.target.result;
       };
       reader.readAsDataURL(file);
     });
@@ -609,7 +504,7 @@
       reader.readAsDataURL(file);
     });
 
-    // رسم المشهد: الصورة الشخصية أولاً، ثم القالب كإطار علوي يحيط بها بدقة
+    // رسم المشهد: الصورة الشخصية في الخلفية، والقالب الأصلي بشفافيته الطبيعية فوقها
     function render() {
       ctx.clearRect(0, 0, 1080, 1080);
 
@@ -623,10 +518,8 @@
         ctx.restore();
       }
 
-      // الطبقة 2: القالب كإطار علوي
-      if (templateCanvas) {
-        ctx.drawImage(templateCanvas, 0, 0, 1080, 1080);
-      } else if (templateImage) {
+      // الطبقة 2: القالب الأصلي غير ممسوس
+      if (templateImage) {
         ctx.drawImage(templateImage, 0, 0, 1080, 1080);
       }
     }
@@ -701,7 +594,7 @@
       initialPinch = null;
     });
 
-    // أدوات التحكم بالزوم والتدوير
+    // أدوات التحكم
     zoomSlider.addEventListener('input', (e) => {
       photoTransform.scale = parseFloat(e.target.value);
       render();
@@ -743,47 +636,30 @@
     }
 
     // تنزيل النتيجة مباشرة
-    let pendingDownload = false;
-
     function downloadFinalImage() {
       if (!userPhoto) return;
       render();
 
       try {
-        const dataUrl = canvas.toDataURL('image/png', 1.0);
-        executeDownloadFromDataUrl(dataUrl);
+        const link = document.createElement('a');
+        link.download = '26september_card.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } catch (err) {
-        pendingDownload = true;
-        securityModal.style.display = 'flex';
+        // في حال تشغيل محلي بمتصفح يفرض قيوداً على file://
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = '26september_card.png';
+            link.href = url;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }
+        }, 'image/png');
       }
-    }
-
-    function executeDownloadFromDataUrl(url) {
-      const a = document.createElement('a');
-      a.download = '26september_card.png';
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-
-    function executeDirectDownload() {
-      render();
-      try {
-        const dataUrl = canvas.toDataURL('image/png', 1.0);
-        executeDownloadFromDataUrl(dataUrl);
-      } catch (e) {
-        alert('يرجى الضغط على زر التنزيل مرة أخرى.');
-      }
-    }
-
-    function triggerTemplateSelectForExport() {
-      templateFileInput.click();
-    }
-
-    function closeSecurityModal() {
-      securityModal.style.display = 'none';
-      pendingDownload = false;
     }
   </script>
 </body>
