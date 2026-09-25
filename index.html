@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تركيب الصورة في قالب 26 سبتمبر | شرطة حراسة المنشآت</title>
+  <title>تركيب الصورة في قالب 26 سبتمبر | شرطة حراسة المنشآت - مأرب</title>
   <style>
     :root {
       --primary: #B15433;
@@ -65,20 +65,20 @@
     }
 
     .header-info h1 {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       line-height: 1.35;
       color: #FFFFFF;
     }
 
     .header-info p {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--accent);
       font-weight: 600;
       margin-top: 2px;
     }
 
-    /* بطاقة العمل الرئيسية */
+    /* بطاقة العمل */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -294,7 +294,7 @@
 
   <!-- عناصر الاستدعاء التلقائي في DOM -->
   <img id="domLogo" src="logo.png" style="display:none;" onerror="tryNextLogo(this)">
-  <img id="domTemplate" src="1000701490.png" style="display:none;" onerror="tryNextTemplate(this)">
+  <img id="domTemplate" src="1000702244.png" style="display:none;" onerror="tryNextTemplate(this)">
 
   <div class="container">
     <!-- الترويسة -->
@@ -302,7 +302,7 @@
       <img src="logo.png" alt="شعار شرطة حراسة المنشآت وحماية الشخصيات" class="header-logo" id="headerLogoDisplay" onerror="tryNextLogoDisplay(this)">
       <div class="header-info">
         <h1>شرطة حراسة المنشآت وحماية الشخصيات</h1>
-        <p>قالب الاحتفاء بالذكرى الـ 64 لثورة 26 سبتمبر</p>
+        <p>فرع م / مأرب - قالب الاحتفاء بالعيد 64 لثورة 26 سبتمبر</p>
       </div>
     </header>
 
@@ -321,7 +321,7 @@
       </div>
 
       <div class="hint" id="dragHint" style="display:none;">
-        💡 يمكنك تحريك صورتك وتوسيطها داخل فتحة القالب بالسحب المباشر
+        💡 يمكنك تحريك صورتك وتوسيطها داخل الدائرة بالسحب المباشر
       </div>
 
       <!-- أزرار الإجراءات -->
@@ -382,26 +382,31 @@
     const rotateSlider = document.getElementById('rotateSlider');
     const templateStatusText = document.getElementById('templateStatusText');
 
-    // أبعاد وموضع فتحة الصورة في القالب
-    const targetOpening = {
-      centerX: 480,
+    // إحداثيات وموضع الدائرة المخصصة للصورة في القالب 1000702244.png
+    // المركز: X=500, Y=360، نصف القطر: 212 (القطر ~424)
+    const targetCircle = {
+      centerX: 500,
       centerY: 360,
-      boxWidth: 420,
-      boxHeight: 420
+      radius: 212,
+      diameter: 424
     };
 
     let userPhoto = null;
     let templateImage = null;
 
     let photoTransform = {
-      x: targetOpening.centerX,
-      y: targetOpening.centerY,
+      x: targetCircle.centerX,
+      y: targetCircle.centerY,
       scale: 1,
       rotation: 0
     };
 
-    // بدائل أسماء ملفات القالب المدعومة للاستدعاء التلقائي
+    // أسماء ملفات القالب المدعومة للاستدعاء التلقائي
     const templateCandidateNames = [
+      '1000702244.png',
+      '1000702244.jpg',
+      '1000702139.png',
+      '1000702139.jpg',
       '1000701490.png',
       '1000701490.jpg',
       'template.png',
@@ -444,10 +449,10 @@
       }
     }
 
-    // تعيين القالب مباشرة كما هو دون التعديل على بكسلاته الأصلية
+    // تعيين القالب مباشرة مع الحفاظ التام على ألوان وتفاصيل بكسلاته الأصلية
     function setTemplate(img) {
       templateImage = img;
-      templateStatusText.textContent = 'تم استيراد القالب بنجاح';
+      templateStatusText.textContent = 'تم استيراد القالب الجديد بنجاح';
       render();
     }
 
@@ -459,7 +464,7 @@
       setTemplate(domTemplate);
     }
 
-    // استيراد القالب يدوياً عند رغبة المستخدم
+    // استيراد القالب يدوياً عند الحاجة
     templateFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -483,10 +488,10 @@
         const img = new Image();
         img.onload = () => {
           userPhoto = img;
-          const fit = Math.max(targetOpening.boxWidth / img.width, targetOpening.boxHeight / img.height);
+          const fit = Math.max(targetCircle.diameter / img.width, targetCircle.diameter / img.height);
           photoTransform.scale = fit * 1.05;
-          photoTransform.x = targetOpening.centerX;
-          photoTransform.y = targetOpening.centerY;
+          photoTransform.x = targetCircle.centerX;
+          photoTransform.y = targetCircle.centerY;
           photoTransform.rotation = 0;
 
           zoomSlider.value = photoTransform.scale;
@@ -504,13 +509,19 @@
       reader.readAsDataURL(file);
     });
 
-    // رسم المشهد: الصورة الشخصية في الخلفية، والقالب الأصلي بشفافيته الطبيعية فوقها
+    // رسم المشهد:
+    // 1. قص الصورة داخل نطاق الدائرة بالضبط (لحماية شعار النسر العلوي وخريطة الجمهورية السفلية)
+    // 2. رسم القالب بكامل تفاصيله وشفافيته الأصلية فوق الصورة
     function render() {
       ctx.clearRect(0, 0, 1080, 1080);
 
-      // الطبقة 1: الصورة الشخصية
+      // الطبقة 1: الصورة الشخصية مقصوصة في حدود الدائرة
       if (userPhoto) {
         ctx.save();
+        ctx.beginPath();
+        ctx.arc(targetCircle.centerX, targetCircle.centerY, targetCircle.radius + 3, 0, Math.PI * 2);
+        ctx.clip();
+
         ctx.translate(photoTransform.x, photoTransform.y);
         ctx.rotate((photoTransform.rotation * Math.PI) / 180);
         ctx.scale(photoTransform.scale, photoTransform.scale);
@@ -518,7 +529,7 @@
         ctx.restore();
       }
 
-      // الطبقة 2: القالب الأصلي غير ممسوس
+      // الطبقة 2: القالب التصميمي المعتمد كما هو
       if (templateImage) {
         ctx.drawImage(templateImage, 0, 0, 1080, 1080);
       }
@@ -594,7 +605,7 @@
       initialPinch = null;
     });
 
-    // أدوات التحكم
+    // أدوات التحكم بالزوم والتدوير
     zoomSlider.addEventListener('input', (e) => {
       photoTransform.scale = parseFloat(e.target.value);
       render();
@@ -618,17 +629,17 @@
     }
 
     function centerImage() {
-      photoTransform.x = targetOpening.centerX;
-      photoTransform.y = targetOpening.centerY;
+      photoTransform.x = targetCircle.centerX;
+      photoTransform.y = targetCircle.centerY;
       render();
     }
 
     function resetAll() {
       if (!userPhoto) return;
-      const fit = Math.max(targetOpening.boxWidth / userPhoto.width, targetOpening.boxHeight / userPhoto.height);
+      const fit = Math.max(targetCircle.diameter / userPhoto.width, targetCircle.diameter / userPhoto.height);
       photoTransform.scale = fit * 1.05;
-      photoTransform.x = targetOpening.centerX;
-      photoTransform.y = targetOpening.centerY;
+      photoTransform.x = targetCircle.centerX;
+      photoTransform.y = targetCircle.centerY;
       photoTransform.rotation = 0;
       zoomSlider.value = photoTransform.scale;
       rotateSlider.value = 0;
@@ -642,18 +653,17 @@
 
       try {
         const link = document.createElement('a');
-        link.download = '26september_card.png';
+        link.download = '26september_yemen_card.png';
         link.href = canvas.toDataURL('image/png', 1.0);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       } catch (err) {
-        // في حال تشغيل محلي بمتصفح يفرض قيوداً على file://
         canvas.toBlob((blob) => {
           if (blob) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.download = '26september_card.png';
+            link.download = '26september_yemen_card.png';
             link.href = url;
             link.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
