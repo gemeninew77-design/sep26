@@ -342,7 +342,7 @@
       <div class="controls-panel" id="controlsPanel" style="display:none;">
         <div class="control-item">
           <span class="control-title">التكبير:</span>
-          <input type="range" id="zoomSlider" min="0.2" max="3" step="0.01" value="1">
+          <input type="range" id="zoomSlider" min="0.1" max="4" step="0.01" value="1">
           <button class="icon-btn" onclick="stepZoom(-0.1)">-</button>
           <button class="icon-btn" onclick="stepZoom(0.1)">+</button>
         </div>
@@ -382,13 +382,12 @@
     const rotateSlider = document.getElementById('rotateSlider');
     const templateStatusText = document.getElementById('templateStatusText');
 
-    // إحداثيات وموضع الدائرة المخصصة للصورة في القالب 1000702244.png
-    // المركز: X=500, Y=360، نصف القطر: 212 (القطر ~424)
+    // إحداثيات وموضع الدائرة الحقيقي في القالب
+    // تم خفض المركز قليلاً إلى Y=390 وزيادة قطر التغطية إلى 480 ليملأ الفراغ بالكامل ويمتد خلف الخريطة
     const targetCircle = {
       centerX: 500,
-      centerY: 360,
-      radius: 212,
-      diameter: 424
+      centerY: 390,
+      diameter: 480
     };
 
     let userPhoto = null;
@@ -449,7 +448,7 @@
       }
     }
 
-    // تعيين القالب مباشرة مع الحفاظ التام على ألوان وتفاصيل بكسلاته الأصلية
+    // تعيين القالب مباشرة مع الحفاظ على شفافيته الطبيعية
     function setTemplate(img) {
       templateImage = img;
       templateStatusText.textContent = 'تم استيراد القالب الجديد بنجاح';
@@ -488,8 +487,9 @@
         const img = new Image();
         img.onload = () => {
           userPhoto = img;
+          // ضبط مقاس أولي يغطي كامل الفتحة الدائرية ويمتد خلف الخريطة لمنع ظهور أي هلال أو فراغ
           const fit = Math.max(targetCircle.diameter / img.width, targetCircle.diameter / img.height);
-          photoTransform.scale = fit * 1.05;
+          photoTransform.scale = fit * 1.15; // مقاس وافر لملء الفراغ بالكامل
           photoTransform.x = targetCircle.centerX;
           photoTransform.y = targetCircle.centerY;
           photoTransform.rotation = 0;
@@ -510,18 +510,14 @@
     });
 
     // رسم المشهد:
-    // 1. قص الصورة داخل نطاق الدائرة بالضبط (لحماية شعار النسر العلوي وخريطة الجمهورية السفلية)
-    // 2. رسم القالب بكامل تفاصيله وشفافيته الأصلية فوق الصورة
+    // الصورة في الخلفية كاملة دون أي قص صناعي (تم إلغاء ctx.clip نهائياً)
+    // القالب المعتمد يوضع كإطار علوي يحيط بالصورة بدقة ويغطي كافة الحواف الخارجية تلقائياً
     function render() {
       ctx.clearRect(0, 0, 1080, 1080);
 
-      // الطبقة 1: الصورة الشخصية مقصوصة في حدود الدائرة
+      // الطبقة 1: الصورة الشخصية كاملة تغطي كامل الفراغ الداخلي دون أي قص يسبب الهلال
       if (userPhoto) {
         ctx.save();
-        ctx.beginPath();
-        ctx.arc(targetCircle.centerX, targetCircle.centerY, targetCircle.radius + 3, 0, Math.PI * 2);
-        ctx.clip();
-
         ctx.translate(photoTransform.x, photoTransform.y);
         ctx.rotate((photoTransform.rotation * Math.PI) / 180);
         ctx.scale(photoTransform.scale, photoTransform.scale);
@@ -529,7 +525,7 @@
         ctx.restore();
       }
 
-      // الطبقة 2: القالب التصميمي المعتمد كما هو
+      // الطبقة 2: القالب كإطار علوي فوق الصورة
       if (templateImage) {
         ctx.drawImage(templateImage, 0, 0, 1080, 1080);
       }
@@ -587,7 +583,7 @@
       if (e.touches.length === 2 && initialPinch) {
         e.preventDefault();
         const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        photoTransform.scale = Math.min(Math.max(initialScale * (dist / initialPinch), 0.2), 3);
+        photoTransform.scale = Math.min(Math.max(initialScale * (dist / initialPinch), 0.1), 4);
         zoomSlider.value = photoTransform.scale;
         render();
         return;
@@ -617,7 +613,7 @@
     });
 
     function stepZoom(delta) {
-      photoTransform.scale = Math.min(Math.max(photoTransform.scale + delta, 0.2), 3);
+      photoTransform.scale = Math.min(Math.max(photoTransform.scale + delta, 0.1), 4);
       zoomSlider.value = photoTransform.scale;
       render();
     }
@@ -637,7 +633,7 @@
     function resetAll() {
       if (!userPhoto) return;
       const fit = Math.max(targetCircle.diameter / userPhoto.width, targetCircle.diameter / userPhoto.height);
-      photoTransform.scale = fit * 1.05;
+      photoTransform.scale = fit * 1.15;
       photoTransform.x = targetCircle.centerX;
       photoTransform.y = targetCircle.centerY;
       photoTransform.rotation = 0;
